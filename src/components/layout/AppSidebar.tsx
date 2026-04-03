@@ -9,6 +9,7 @@ import {
 
 const menuItems = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/" },
+  { title: "Classes & Sections", icon: GraduationCap, path: "/classes" },
   { title: "Students", icon: Users, path: "/students" },
   { title: "Teachers & Staff", icon: GraduationCap, path: "/teachers" },
   { title: "Attendance", icon: ClipboardCheck, path: "/attendance" },

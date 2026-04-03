@@ -7,6 +7,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Students from "./pages/Students";
 import ComingSoon from "./pages/ComingSoon";
+import ClassSections from "./pages/ClassSections";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/inventory" element={<ComingSoon />} />
             <Route path="/notifications" element={<ComingSoon />} />
             <Route path="/reports" element={<ComingSoon />} />
+            <Route path="/classes" element={<ClassSections />} />
             <Route path="/settings" element={<ComingSoon />} />
           </Route>
           <Route path="*" element={<NotFound />} />
