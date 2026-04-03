@@ -17,55 +17,118 @@ export type Database = {
       students: {
         Row: {
           address: string | null
+          admission_date: string | null
+          admission_type: string | null
+          bangla_name: string | null
+          birth_registration_no: string | null
           blood_group: string | null
           class: string
           created_at: string
           dob: string | null
+          father_bangla_name: string | null
           father_name: string | null
+          father_nid: string | null
+          father_occupation: string | null
           gender: string | null
           id: string
+          mother_bangla_name: string | null
           mother_name: string | null
+          mother_nid: string | null
+          mother_occupation: string | null
           name: string
+          permanent_district: string | null
+          permanent_post: string | null
+          permanent_upazila: string | null
+          permanent_village: string | null
           phone: string | null
+          present_district: string | null
+          present_post: string | null
+          present_upazila: string | null
+          present_village: string | null
+          previous_institution: string | null
+          receipt_no: string | null
           religion: string | null
           roll: number | null
           section: string | null
+          special_disease: string | null
           student_id: string | null
           updated_at: string
         }
         Insert: {
           address?: string | null
+          admission_date?: string | null
+          admission_type?: string | null
+          bangla_name?: string | null
+          birth_registration_no?: string | null
           blood_group?: string | null
           class: string
           created_at?: string
           dob?: string | null
+          father_bangla_name?: string | null
           father_name?: string | null
+          father_nid?: string | null
+          father_occupation?: string | null
           gender?: string | null
           id?: string
+          mother_bangla_name?: string | null
           mother_name?: string | null
+          mother_nid?: string | null
+          mother_occupation?: string | null
           name: string
+          permanent_district?: string | null
+          permanent_post?: string | null
+          permanent_upazila?: string | null
+          permanent_village?: string | null
           phone?: string | null
+          present_district?: string | null
+          present_post?: string | null
+          present_upazila?: string | null
+          present_village?: string | null
+          previous_institution?: string | null
+          receipt_no?: string | null
           religion?: string | null
           roll?: number | null
           section?: string | null
+          special_disease?: string | null
           student_id?: string | null
           updated_at?: string
         }
         Update: {
           address?: string | null
+          admission_date?: string | null
+          admission_type?: string | null
+          bangla_name?: string | null
+          birth_registration_no?: string | null
           blood_group?: string | null
           class?: string
           created_at?: string
           dob?: string | null
+          father_bangla_name?: string | null
           father_name?: string | null
+          father_nid?: string | null
+          father_occupation?: string | null
           gender?: string | null
           id?: string
+          mother_bangla_name?: string | null
           mother_name?: string | null
+          mother_nid?: string | null
+          mother_occupation?: string | null
           name?: string
+          permanent_district?: string | null
+          permanent_post?: string | null
+          permanent_upazila?: string | null
+          permanent_village?: string | null
           phone?: string | null
+          present_district?: string | null
+          present_post?: string | null
+          present_upazila?: string | null
+          present_village?: string | null
+          previous_institution?: string | null
+          receipt_no?: string | null
           religion?: string | null
           roll?: number | null
           section?: string | null
+          special_disease?: string | null
           student_id?: string | null
           updated_at?: string
         }
