@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import Students from "./pages/Students";
 import ComingSoon from "./pages/ComingSoon";
 import ClassSections from "./pages/ClassSections";
+import AdmissionForm from "./pages/AdmissionForm";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
