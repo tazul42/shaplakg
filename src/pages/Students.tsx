@@ -1,59 +1,70 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search, Edit2, Trash2, X, User } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, User, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface Student {
   id: string;
   name: string;
-  fatherName: string;
-  motherName: string;
+  father_name: string;
+  mother_name: string;
   class: string;
   section: string;
   roll: number;
-  studentId: string;
+  student_id: string;
   dob: string;
   gender: string;
   religion: string;
-  bloodGroup: string;
+  blood_group: string;
   address: string;
   phone: string;
 }
 
-const initialStudents: Student[] = [
-  { id: "1", name: "Rafiq Ahmed", fatherName: "Karim Ahmed", motherName: "Fatema Begum", class: "KG-1", section: "A", roll: 1, studentId: "SK-2024-001", dob: "2019-03-15", gender: "Male", religion: "Islam", bloodGroup: "A+", address: "Dhaka, Bangladesh", phone: "01712345678" },
-  { id: "2", name: "Sumaiya Akter", fatherName: "Jamal Hossain", motherName: "Nasima Akter", class: "KG-2", section: "B", roll: 5, studentId: "SK-2024-002", dob: "2018-07-22", gender: "Female", religion: "Islam", bloodGroup: "B+", address: "Chittagong, Bangladesh", phone: "01898765432" },
-  { id: "3", name: "Arif Rahman", fatherName: "Mizanur Rahman", motherName: "Halima Khatun", class: "Nursery", section: "A", roll: 3, studentId: "SK-2024-003", dob: "2020-01-10", gender: "Male", religion: "Islam", bloodGroup: "O+", address: "Sylhet, Bangladesh", phone: "01556789012" },
-  { id: "4", name: "Nusrat Jahan", fatherName: "Abdul Kadir", motherName: "Rahima Begum", class: "Class 1", section: "A", roll: 2, studentId: "SK-2024-004", dob: "2017-11-05", gender: "Female", religion: "Islam", bloodGroup: "AB+", address: "Rajshahi, Bangladesh", phone: "01634567890" },
-  { id: "5", name: "Tanvir Hasan", fatherName: "Shahidul Hasan", motherName: "Monira Begum", class: "Class 2", section: "B", roll: 8, studentId: "SK-2024-005", dob: "2016-09-18", gender: "Male", religion: "Islam", bloodGroup: "A-", address: "Khulna, Bangladesh", phone: "01912345678" },
-  { id: "6", name: "Mim Akter", fatherName: "Rafiqul Islam", motherName: "Shahida Akter", class: "KG-1", section: "B", roll: 12, studentId: "SK-2024-006", dob: "2019-05-30", gender: "Female", religion: "Islam", bloodGroup: "B-", address: "Comilla, Bangladesh", phone: "01823456789" },
-];
+type StudentForm = Omit<Student, "id">;
 
-const emptyStudent: Omit<Student, "id"> = {
-  name: "", fatherName: "", motherName: "", class: "", section: "", roll: 0,
-  studentId: "", dob: "", gender: "", religion: "", bloodGroup: "", address: "", phone: "",
+const emptyStudent: StudentForm = {
+  name: "", father_name: "", mother_name: "", class: "", section: "", roll: 0,
+  student_id: "", dob: "", gender: "", religion: "", blood_group: "", address: "", phone: "",
 };
 
 export default function Students() {
-  const [students, setStudents] = useState<Student[]>(initialStudents);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
-  const [form, setForm] = useState<Omit<Student, "id">>(emptyStudent);
+  const [form, setForm] = useState<StudentForm>(emptyStudent);
+  const { toast } = useToast();
+
+  const fetchStudents = async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from("students").select("*").order("created_at", { ascending: false });
+    if (error) {
+      toast({ title: "Error", description: "Failed to load students", variant: "destructive" });
+    } else {
+      setStudents(data as Student[]);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchStudents(); }, []);
 
   const filtered = students.filter((s) =>
     s.name.toLowerCase().includes(search.toLowerCase()) ||
-    s.studentId.toLowerCase().includes(search.toLowerCase()) ||
+    (s.student_id || "").toLowerCase().includes(search.toLowerCase()) ||
     s.class.toLowerCase().includes(search.toLowerCase())
   );
 
   const openAdd = () => {
     setEditingStudent(null);
-    setForm({ ...emptyStudent, studentId: `SK-2024-${String(students.length + 1).padStart(3, "0")}` });
+    setForm({ ...emptyStudent, student_id: `SK-2024-${String(students.length + 1).padStart(3, "0")}` });
     setDialogOpen(true);
   };
 
@@ -64,21 +75,40 @@ export default function Students() {
     setDialogOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name || !form.class) return;
+    setSaving(true);
     if (editingStudent) {
-      setStudents(students.map((s) => s.id === editingStudent.id ? { ...form, id: editingStudent.id } : s));
+      const { error } = await supabase.from("students").update(form).eq("id", editingStudent.id);
+      if (error) {
+        toast({ title: "Error", description: "Failed to update student", variant: "destructive" });
+      } else {
+        toast({ title: "Success", description: "Student updated" });
+      }
     } else {
-      setStudents([...students, { ...form, id: Date.now().toString() }]);
+      const { error } = await supabase.from("students").insert(form);
+      if (error) {
+        toast({ title: "Error", description: "Failed to add student", variant: "destructive" });
+      } else {
+        toast({ title: "Success", description: "Student added" });
+      }
     }
+    setSaving(false);
     setDialogOpen(false);
+    fetchStudents();
   };
 
-  const handleDelete = (id: string) => {
-    setStudents(students.filter((s) => s.id !== id));
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase.from("students").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Error", description: "Failed to delete student", variant: "destructive" });
+    } else {
+      toast({ title: "Deleted", description: "Student removed" });
+      fetchStudents();
+    }
   };
 
-  const updateForm = (key: keyof typeof form, value: string | number) => {
+  const updateForm = (key: keyof StudentForm, value: string | number) => {
     setForm({ ...form, [key]: value });
   };
 
@@ -94,74 +124,79 @@ export default function Students() {
         </Button>
       </motion.div>
 
-      {/* Search */}
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input placeholder="Search by name, ID, or class..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
       </div>
 
-      {/* Table */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="stat-card overflow-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-muted-foreground border-b border-border">
-              <th className="text-left py-3 px-3 font-medium">Student</th>
-              <th className="text-left py-3 px-3 font-medium hidden md:table-cell">ID</th>
-              <th className="text-left py-3 px-3 font-medium">Class</th>
-              <th className="text-left py-3 px-3 font-medium hidden lg:table-cell">Section</th>
-              <th className="text-center py-3 px-3 font-medium hidden lg:table-cell">Roll</th>
-              <th className="text-left py-3 px-3 font-medium hidden xl:table-cell">Phone</th>
-              <th className="text-center py-3 px-3 font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <AnimatePresence>
-              {filtered.map((student, i) => (
-                <motion.tr
-                  key={student.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ delay: i * 0.03 }}
-                  className="border-b border-border/50 hover:bg-muted/30 transition-colors"
-                >
-                  <td className="py-3 px-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        <User className="w-4 h-4 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground">{student.name}</p>
-                        <p className="text-xs text-muted-foreground">{student.gender}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-3 px-3 text-foreground hidden md:table-cell">{student.studentId}</td>
-                  <td className="py-3 px-3 text-foreground">{student.class}</td>
-                  <td className="py-3 px-3 text-foreground hidden lg:table-cell">{student.section}</td>
-                  <td className="py-3 px-3 text-center text-foreground hidden lg:table-cell">{student.roll}</td>
-                  <td className="py-3 px-3 text-foreground hidden xl:table-cell">{student.phone}</td>
-                  <td className="py-3 px-3">
-                    <div className="flex items-center justify-center gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => openEdit(student)}>
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(student.id)}>
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </td>
-                </motion.tr>
-              ))}
-            </AnimatePresence>
-          </tbody>
-        </table>
-        {filtered.length === 0 && (
-          <p className="text-center py-8 text-muted-foreground">No students found.</p>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        ) : (
+          <>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-muted-foreground border-b border-border">
+                  <th className="text-left py-3 px-3 font-medium">Student</th>
+                  <th className="text-left py-3 px-3 font-medium hidden md:table-cell">ID</th>
+                  <th className="text-left py-3 px-3 font-medium">Class</th>
+                  <th className="text-left py-3 px-3 font-medium hidden lg:table-cell">Section</th>
+                  <th className="text-center py-3 px-3 font-medium hidden lg:table-cell">Roll</th>
+                  <th className="text-left py-3 px-3 font-medium hidden xl:table-cell">Phone</th>
+                  <th className="text-center py-3 px-3 font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <AnimatePresence>
+                  {filtered.map((student, i) => (
+                    <motion.tr
+                      key={student.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ delay: i * 0.03 }}
+                      className="border-b border-border/50 hover:bg-muted/30 transition-colors"
+                    >
+                      <td className="py-3 px-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            <User className="w-4 h-4 text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-foreground">{student.name}</p>
+                            <p className="text-xs text-muted-foreground">{student.gender}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-3 text-foreground hidden md:table-cell">{student.student_id}</td>
+                      <td className="py-3 px-3 text-foreground">{student.class}</td>
+                      <td className="py-3 px-3 text-foreground hidden lg:table-cell">{student.section}</td>
+                      <td className="py-3 px-3 text-center text-foreground hidden lg:table-cell">{student.roll}</td>
+                      <td className="py-3 px-3 text-foreground hidden xl:table-cell">{student.phone}</td>
+                      <td className="py-3 px-3">
+                        <div className="flex items-center justify-center gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => openEdit(student)}>
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDelete(student.id)}>
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </AnimatePresence>
+              </tbody>
+            </table>
+            {filtered.length === 0 && (
+              <p className="text-center py-8 text-muted-foreground">No students found.</p>
+            )}
+          </>
         )}
       </motion.div>
 
-      {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
@@ -174,15 +209,15 @@ export default function Students() {
             </div>
             <div className="space-y-1.5">
               <Label>Student ID</Label>
-              <Input value={form.studentId} onChange={(e) => updateForm("studentId", e.target.value)} />
+              <Input value={form.student_id} onChange={(e) => updateForm("student_id", e.target.value)} />
             </div>
             <div className="space-y-1.5">
               <Label>Father's Name</Label>
-              <Input value={form.fatherName} onChange={(e) => updateForm("fatherName", e.target.value)} />
+              <Input value={form.father_name} onChange={(e) => updateForm("father_name", e.target.value)} />
             </div>
             <div className="space-y-1.5">
               <Label>Mother's Name</Label>
-              <Input value={form.motherName} onChange={(e) => updateForm("motherName", e.target.value)} />
+              <Input value={form.mother_name} onChange={(e) => updateForm("mother_name", e.target.value)} />
             </div>
             <div className="space-y-1.5">
               <Label>Class *</Label>
@@ -230,7 +265,7 @@ export default function Students() {
             </div>
             <div className="space-y-1.5">
               <Label>Blood Group</Label>
-              <Select value={form.bloodGroup} onValueChange={(v) => updateForm("bloodGroup", v)}>
+              <Select value={form.blood_group} onValueChange={(v) => updateForm("blood_group", v)}>
                 <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
                   {["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"].map((b) => (
@@ -250,7 +285,10 @@ export default function Students() {
           </div>
           <div className="flex justify-end gap-3 mt-6">
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave}>{editingStudent ? "Update" : "Add Student"}</Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              {editingStudent ? "Update" : "Add Student"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
