@@ -7,6 +7,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Students from "./pages/Students";
 import ComingSoon from "./pages/ComingSoon";
+import ClassSections from "./pages/ClassSections";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
