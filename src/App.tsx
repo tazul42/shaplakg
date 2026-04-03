@@ -23,7 +23,7 @@ const App = () => (
           <Route element={<AppLayout />}>
             <Route path="/" element={<Dashboard />} />
             {/* Student Management */}
-            <Route path="/students/admission-form" element={<ComingSoon />} />
+            <Route path="/students/admission-form" element={<AdmissionForm />} />
             <Route path="/students/new-admission" element={<ComingSoon />} />
             <Route path="/students" element={<Students />} />
             <Route path="/students/bulk-upload" element={<ComingSoon />} />
