@@ -137,3 +137,90 @@
     @apply bg-sidebar-accent text-sidebar-primary font-medium;
   }
 }
+
+/* Print styles for A4 single-page admission form */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0.5in;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide sidebar, topbar, and non-essential UI */
+  nav, aside, header,
+  [data-sidebar], .sidebar-link,
+  button, .no-print {
+    display: none !important;
+  }
+
+  /* Make main content full width */
+  main, [role="main"], .flex-1 {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Shrink form to fit one page */
+  .max-w-5xl {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 9pt !important;
+  }
+
+  .max-w-5xl * {
+    font-size: inherit !important;
+  }
+
+  .max-w-5xl h1 {
+    font-size: 14pt !important;
+  }
+
+  .max-w-5xl h2 {
+    font-size: 12pt !important;
+  }
+
+  .max-w-5xl h3 {
+    font-size: 9pt !important;
+  }
+
+  .stat-card {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    padding: 12px !important;
+  }
+
+  .space-y-6 > * + * {
+    margin-top: 8px !important;
+  }
+
+  .gap-4 {
+    gap: 6px !important;
+  }
+
+  input, select, [data-radix-select-trigger] {
+    height: 24px !important;
+    min-height: 24px !important;
+    padding: 2px 6px !important;
+    border: 1px solid #999 !important;
+  }
+
+  .space-y-1\\.5 > * + * {
+    margin-top: 2px !important;
+  }
+
+  /* Force single page */
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  * {
+    page-break-inside: avoid;
+  }
+}
