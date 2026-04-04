@@ -9,6 +9,10 @@ import Students from "./pages/Students";
 import ComingSoon from "./pages/ComingSoon";
 import ClassSections from "./pages/ClassSections";
 import AdmissionForm from "./pages/AdmissionForm";
+import FeesTable from "./pages/FeesTable";
+import FeesReceivedCash from "./pages/FeesReceivedCash";
+import OnlinePayments from "./pages/OnlinePayments";
+import ClassLedger from "./pages/ClassLedger";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
