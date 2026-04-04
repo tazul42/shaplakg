@@ -28,7 +28,7 @@ const App = () => (
             <Route path="/" element={<Dashboard />} />
             {/* Student Management */}
             <Route path="/students/admission-form" element={<AdmissionForm />} />
-            <Route path="/students/new-admission" element={<ComingSoon />} />
+            <Route path="/students/new-admission" element={<AdmissionForm />} />
             <Route path="/students" element={<Students />} />
             <Route path="/students/bulk-upload" element={<ComingSoon />} />
             <Route path="/students/promotion" element={<ComingSoon />} />
