@@ -9,6 +9,10 @@ import Students from "./pages/Students";
 import ComingSoon from "./pages/ComingSoon";
 import ClassSections from "./pages/ClassSections";
 import AdmissionForm from "./pages/AdmissionForm";
+import FeesTable from "./pages/FeesTable";
+import FeesReceivedCash from "./pages/FeesReceivedCash";
+import OnlinePayments from "./pages/OnlinePayments";
+import ClassLedger from "./pages/ClassLedger";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,10 +34,10 @@ const App = () => (
             <Route path="/students/promotion" element={<ComingSoon />} />
             <Route path="/students/release-transfer" element={<ComingSoon />} />
             {/* Fees Management */}
-            <Route path="/fees/received-cash" element={<ComingSoon />} />
-            <Route path="/fees/online-payments" element={<ComingSoon />} />
-            <Route path="/fees/table" element={<ComingSoon />} />
-            <Route path="/fees/class-ledger" element={<ComingSoon />} />
+            <Route path="/fees/received-cash" element={<FeesReceivedCash />} />
+            <Route path="/fees/online-payments" element={<OnlinePayments />} />
+            <Route path="/fees/table" element={<FeesTable />} />
+            <Route path="/fees/class-ledger" element={<ClassLedger />} />
             {/* Teacher & Staff */}
             <Route path="/teachers/add" element={<ComingSoon />} />
             <Route path="/teachers/profiles" element={<ComingSoon />} />

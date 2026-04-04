@@ -14,6 +14,90 @@ export type Database = {
   }
   public: {
     Tables: {
+      fee_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          fee_structure_id: string | null
+          id: string
+          payment_date: string
+          payment_method: string
+          receipt_no: string | null
+          remarks: string | null
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          fee_structure_id?: string | null
+          id?: string
+          payment_date?: string
+          payment_method?: string
+          receipt_no?: string | null
+          remarks?: string | null
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          fee_structure_id?: string | null
+          id?: string
+          payment_date?: string
+          payment_method?: string
+          receipt_no?: string | null
+          remarks?: string | null
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fee_payments_fee_structure_id_fkey"
+            columns: ["fee_structure_id"]
+            isOneToOne: false
+            referencedRelation: "fee_structures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_payments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fee_structures: {
+        Row: {
+          academic_year: string
+          amount: number
+          class: string
+          created_at: string
+          fee_type: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          academic_year?: string
+          amount?: number
+          class: string
+          created_at?: string
+          fee_type: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          academic_year?: string
+          amount?: number
+          class?: string
+          created_at?: string
+          fee_type?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       students: {
         Row: {
           address: string | null
