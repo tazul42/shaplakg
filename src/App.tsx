@@ -34,10 +34,10 @@ const App = () => (
             <Route path="/students/promotion" element={<ComingSoon />} />
             <Route path="/students/release-transfer" element={<ComingSoon />} />
             {/* Fees Management */}
-            <Route path="/fees/received-cash" element={<ComingSoon />} />
-            <Route path="/fees/online-payments" element={<ComingSoon />} />
-            <Route path="/fees/table" element={<ComingSoon />} />
-            <Route path="/fees/class-ledger" element={<ComingSoon />} />
+            <Route path="/fees/received-cash" element={<FeesReceivedCash />} />
+            <Route path="/fees/online-payments" element={<OnlinePayments />} />
+            <Route path="/fees/table" element={<FeesTable />} />
+            <Route path="/fees/class-ledger" element={<ClassLedger />} />
             {/* Teacher & Staff */}
             <Route path="/teachers/add" element={<ComingSoon />} />
             <Route path="/teachers/profiles" element={<ComingSoon />} />
