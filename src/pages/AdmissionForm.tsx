@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Save, Loader2, Printer, RotateCcw } from "lucide-react";
+import { Save, Loader2, Printer, RotateCcw, Camera, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +16,6 @@ const initialForm = {
   admission_type: "New",
   class: "",
   section: "",
-  // Student info
   name: "",
   bangla_name: "",
   dob: "",
@@ -28,22 +27,18 @@ const initialForm = {
   previous_institution: "",
   phone: "",
   student_id: "",
-  // Father info
   father_name: "",
   father_bangla_name: "",
   father_occupation: "",
   father_nid: "",
-  // Mother info
   mother_name: "",
   mother_bangla_name: "",
   mother_occupation: "",
   mother_nid: "",
-  // Permanent address
   permanent_village: "",
   permanent_post: "",
   permanent_upazila: "",
   permanent_district: "",
-  // Present address
   present_village: "",
   present_post: "",
   present_upazila: "",
@@ -71,11 +66,56 @@ const Field = ({ label, children, required, span2 }: { label: string; children: 
 export default function AdmissionForm() {
   const [form, setForm] = useState<FormState>({ ...initialForm });
   const [saving, setSaving] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const update = (key: keyof FormState, value: string) => setForm((prev) => ({ ...prev, [key]: value }));
 
-  const handleReset = () => setForm({ ...initialForm, admission_date: new Date().toISOString().split("T")[0] });
+  const handleReset = () => {
+    setForm({ ...initialForm, admission_date: new Date().toISOString().split("T")[0] });
+    setPhotoFile(null);
+    setPhotoPreview(null);
+  };
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Error", description: "ছবির সাইজ ৫MB এর বেশি হতে পারবে না", variant: "destructive" });
+      return;
+    }
+    setPhotoFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setPhotoPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const removePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const uploadPhoto = async (): Promise<string | null> => {
+    if (!photoFile) return null;
+    setUploadingPhoto(true);
+    const ext = photoFile.name.split(".").pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`;
+    const { error } = await supabase.storage.from("student-photos").upload(fileName, photoFile, {
+      cacheControl: "3600",
+      upsert: false,
+    });
+    setUploadingPhoto(false);
+    if (error) {
+      toast({ title: "Error", description: "ছবি আপলোড করতে সমস্যা হয়েছে", variant: "destructive" });
+      return null;
+    }
+    const { data: urlData } = supabase.storage.from("student-photos").getPublicUrl(fileName);
+    return urlData.publicUrl;
+  };
 
   const handleSubmit = async () => {
     if (!form.name || !form.class) {
@@ -83,6 +123,10 @@ export default function AdmissionForm() {
       return;
     }
     setSaving(true);
+
+    // Upload photo first if selected
+    const photoUrl = await uploadPhoto();
+
     const { error } = await supabase.from("students").insert({
       name: form.name,
       bangla_name: form.bangla_name || null,
@@ -118,6 +162,7 @@ export default function AdmissionForm() {
       present_post: form.present_post || null,
       present_upazila: form.present_upazila || null,
       present_district: form.present_district || null,
+      photo_url: photoUrl,
     } as any);
 
     setSaving(false);
@@ -140,36 +185,74 @@ export default function AdmissionForm() {
       </motion.div>
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="stat-card p-6 space-y-6">
-        {/* Receipt & Admission Info */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-          <Field label="রিসিট নম্বর / Receipt No">
-            <Input value={form.receipt_no} onChange={(e) => update("receipt_no", e.target.value)} placeholder="R-001" />
-          </Field>
-          <Field label="তারিখ / Date">
-            <Input type="date" value={form.admission_date} onChange={(e) => update("admission_date", e.target.value)} />
-          </Field>
-          <Field label="ভর্তির ধরন / Type">
-            <RadioGroup value={form.admission_type} onValueChange={(v) => update("admission_type", v)} className="flex gap-4 pt-2">
-              <div className="flex items-center gap-1.5">
-                <RadioGroupItem value="New" id="new" />
-                <Label htmlFor="new" className="text-sm cursor-pointer">পুরাত / New</Label>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <RadioGroupItem value="Old" id="old" />
-                <Label htmlFor="old" className="text-sm cursor-pointer">নতুন / Old</Label>
-              </div>
-            </RadioGroup>
-          </Field>
-          <Field label="শ্রেণি / Class" required>
-            <Select value={form.class} onValueChange={(v) => update("class", v)}>
-              <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-              <SelectContent>
-                {["Play-Group", "Nursery", "KG-1", "KG-2", "Class 1", "Class 2", "Class 3", "Class 4", "Class 5"].map((c) => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
+        {/* Receipt & Admission Info + Photo */}
+        <div className="flex flex-col sm:flex-row gap-6">
+          {/* Left: Receipt info */}
+          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="রিসিট নম্বর / Receipt No">
+              <Input value={form.receipt_no} onChange={(e) => update("receipt_no", e.target.value)} placeholder="R-001" />
+            </Field>
+            <Field label="তারিখ / Date">
+              <Input type="date" value={form.admission_date} onChange={(e) => update("admission_date", e.target.value)} />
+            </Field>
+            <Field label="ভর্তির ধরন / Type">
+              <RadioGroup value={form.admission_type} onValueChange={(v) => update("admission_type", v)} className="flex gap-4 pt-2">
+                <div className="flex items-center gap-1.5">
+                  <RadioGroupItem value="New" id="new" />
+                  <Label htmlFor="new" className="text-sm cursor-pointer">নতুন / New</Label>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <RadioGroupItem value="Old" id="old" />
+                  <Label htmlFor="old" className="text-sm cursor-pointer">পুরাতন / Old</Label>
+                </div>
+              </RadioGroup>
+            </Field>
+            <Field label="শ্রেণি / Class" required>
+              <Select value={form.class} onValueChange={(v) => update("class", v)}>
+                <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  {["Play-Group", "Nursery", "KG-1", "KG-2", "Class 1", "Class 2", "Class 3", "Class 4", "Class 5"].map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
+
+          {/* Right: Photo Upload */}
+          <div className="flex flex-col items-center gap-2">
+            <Label className="text-xs font-medium text-muted-foreground">ছবি / Photo</Label>
+            <div
+              className="relative w-[120px] h-[140px] border-2 border-dashed border-border rounded-lg flex items-center justify-center overflow-hidden bg-muted/30 cursor-pointer hover:border-primary/50 transition-colors"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {photoPreview ? (
+                <>
+                  <img src={photoPreview} alt="Student" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); removePhoto(); }}
+                    className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-0.5"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </>
+              ) : (
+                <div className="flex flex-col items-center gap-1 text-muted-foreground">
+                  <Camera className="w-8 h-8" />
+                  <span className="text-[10px] text-center leading-tight">ছবি আপলোড<br />করুন</span>
+                </div>
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handlePhotoSelect}
+            />
+            <span className="text-[10px] text-muted-foreground">Max 5MB (JPG/PNG)</span>
+          </div>
         </div>
 
         <Separator />
@@ -227,7 +310,7 @@ export default function AdmissionForm() {
 
         <Separator />
 
-        {/* Father's Information */}
+        {/* Parents Information */}
         <SectionHeader>পিতা-মাতার তথ্য / Parents Information</SectionHeader>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <Field label="পিতার নাম (English)">
@@ -312,8 +395,8 @@ export default function AdmissionForm() {
           <Button variant="outline" onClick={() => window.print()} className="gap-2">
             <Printer className="w-4 h-4" /> Print
           </Button>
-          <Button onClick={handleSubmit} disabled={saving} className="gap-2">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          <Button onClick={handleSubmit} disabled={saving || uploadingPhoto} className="gap-2">
+            {(saving || uploadingPhoto) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Save Admission
           </Button>
         </div>
