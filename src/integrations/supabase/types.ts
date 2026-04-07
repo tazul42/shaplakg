@@ -125,6 +125,7 @@ export type Database = {
           permanent_upazila: string | null
           permanent_village: string | null
           phone: string | null
+          photo_url: string | null
           present_district: string | null
           present_post: string | null
           present_upazila: string | null
@@ -164,6 +165,7 @@ export type Database = {
           permanent_upazila?: string | null
           permanent_village?: string | null
           phone?: string | null
+          photo_url?: string | null
           present_district?: string | null
           present_post?: string | null
           present_upazila?: string | null
@@ -203,6 +205,7 @@ export type Database = {
           permanent_upazila?: string | null
           permanent_village?: string | null
           phone?: string | null
+          photo_url?: string | null
           present_district?: string | null
           present_post?: string | null
           present_upazila?: string | null
