@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search, Edit2, Trash2, User, Loader2 } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, User, Loader2, ChevronLeft, ChevronRight, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -33,11 +33,22 @@ const emptyStudent: StudentForm = {
   student_id: "", dob: "", gender: "", religion: "", blood_group: "", address: "", phone: "",
 };
 
+const CLASSES = ["All", "Nursery", "KG-1", "KG-2", "Class 1", "Class 2", "Class 3", "Class 4", "Class 5"];
+const SECTIONS = ["All", "A", "B", "C"];
+const GENDERS = ["All", "Male", "Female"];
+const PAGE_SIZES = [10, 20, 50, 100];
+
 export default function Students() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
+  const [filterClass, setFilterClass] = useState("All");
+  const [filterSection, setFilterSection] = useState("All");
+  const [filterGender, setFilterGender] = useState("All");
+  const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [form, setForm] = useState<StudentForm>(emptyStudent);
@@ -56,15 +67,29 @@ export default function Students() {
 
   useEffect(() => { fetchStudents(); }, []);
 
-  const filtered = students.filter((s) =>
-    s.name.toLowerCase().includes(search.toLowerCase()) ||
-    (s.student_id || "").toLowerCase().includes(search.toLowerCase()) ||
-    s.class.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = useMemo(() => {
+    return students.filter((s) => {
+      const matchSearch = !search ||
+        s.name.toLowerCase().includes(search.toLowerCase()) ||
+        (s.student_id || "").toLowerCase().includes(search.toLowerCase()) ||
+        (s.father_name || "").toLowerCase().includes(search.toLowerCase()) ||
+        (s.phone || "").includes(search);
+      const matchClass = filterClass === "All" || s.class === filterClass;
+      const matchSection = filterSection === "All" || s.section === filterSection;
+      const matchGender = filterGender === "All" || s.gender === filterGender;
+      return matchSearch && matchClass && matchSection && matchGender;
+    });
+  }, [students, search, filterClass, filterSection, filterGender]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const paginatedStudents = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  // Reset to page 1 when filters change
+  useEffect(() => { setCurrentPage(1); }, [search, filterClass, filterSection, filterGender, pageSize]);
 
   const openAdd = () => {
     setEditingStudent(null);
-    setForm({ ...emptyStudent, student_id: `SK-2024-${String(students.length + 1).padStart(3, "0")}` });
+    setForm({ ...emptyStudent, student_id: `SK-2026-${String(students.length + 1).padStart(3, "0")}` });
     setDialogOpen(true);
   };
 
@@ -112,23 +137,98 @@ export default function Students() {
     setForm({ ...form, [key]: value });
   };
 
+  const activeFilterCount = [filterClass, filterSection, filterGender].filter(f => f !== "All").length;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-foreground">Students</h2>
-          <p className="text-muted-foreground text-sm">{students.length} students enrolled</p>
+          <p className="text-muted-foreground text-sm">
+            {filtered.length} of {students.length} students
+          </p>
         </div>
         <Button onClick={openAdd} className="gap-2">
           <Plus className="w-4 h-4" /> Add Student
         </Button>
       </motion.div>
 
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input placeholder="Search by name, ID, or class..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+      {/* Search & Filter Bar */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="নাম, আইডি, অভিভাবক বা ফোন দিয়ে খুঁজুন..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Button
+          variant={showFilters ? "default" : "outline"}
+          onClick={() => setShowFilters(!showFilters)}
+          className="gap-2"
+        >
+          <Filter className="w-4 h-4" />
+          ফিল্টার
+          {activeFilterCount > 0 && (
+            <span className="ml-1 bg-primary-foreground text-primary text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+              {activeFilterCount}
+            </span>
+          )}
+        </Button>
       </div>
 
+      {/* Filter Options */}
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="flex flex-wrap gap-3 p-4 rounded-lg border border-border bg-muted/30">
+              <div className="space-y-1 min-w-[140px]">
+                <Label className="text-xs text-muted-foreground">ক্লাস</Label>
+                <Select value={filterClass} onValueChange={setFilterClass}>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {CLASSES.map(c => <SelectItem key={c} value={c}>{c === "All" ? "সব ক্লাস" : c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1 min-w-[120px]">
+                <Label className="text-xs text-muted-foreground">সেকশন</Label>
+                <Select value={filterSection} onValueChange={setFilterSection}>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {SECTIONS.map(s => <SelectItem key={s} value={s}>{s === "All" ? "সব সেকশন" : s}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1 min-w-[120px]">
+                <Label className="text-xs text-muted-foreground">লিঙ্গ</Label>
+                <Select value={filterGender} onValueChange={setFilterGender}>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {GENDERS.map(g => <SelectItem key={g} value={g}>{g === "All" ? "সব" : g === "Male" ? "ছেলে" : "মেয়ে"}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              {activeFilterCount > 0 && (
+                <div className="flex items-end">
+                  <Button variant="ghost" size="sm" onClick={() => { setFilterClass("All"); setFilterSection("All"); setFilterGender("All"); }}>
+                    ফিল্টার রিসেট
+                  </Button>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Table */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="stat-card overflow-auto">
         {loading ? (
           <div className="flex items-center justify-center py-12">
@@ -139,6 +239,7 @@ export default function Students() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-muted-foreground border-b border-border">
+                  <th className="text-left py-3 px-3 font-medium">#</th>
                   <th className="text-left py-3 px-3 font-medium">Student</th>
                   <th className="text-left py-3 px-3 font-medium hidden md:table-cell">ID</th>
                   <th className="text-left py-3 px-3 font-medium">Class</th>
@@ -150,15 +251,18 @@ export default function Students() {
               </thead>
               <tbody>
                 <AnimatePresence>
-                  {filtered.map((student, i) => (
+                  {paginatedStudents.map((student, i) => (
                     <motion.tr
                       key={student.id}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      transition={{ delay: i * 0.03 }}
+                      transition={{ delay: i * 0.02 }}
                       className="border-b border-border/50 hover:bg-muted/30 transition-colors"
                     >
+                      <td className="py-3 px-3 text-muted-foreground text-xs">
+                        {(currentPage - 1) * pageSize + i + 1}
+                      </td>
                       <td className="py-3 px-3">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -191,12 +295,74 @@ export default function Students() {
               </tbody>
             </table>
             {filtered.length === 0 && (
-              <p className="text-center py-8 text-muted-foreground">No students found.</p>
+              <p className="text-center py-8 text-muted-foreground">কোনো ছাত্র-ছাত্রী পাওয়া যায়নি।</p>
             )}
           </>
         )}
       </motion.div>
 
+      {/* Pagination */}
+      {filtered.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>প্রতি পৃষ্ঠায়:</span>
+            <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+              <SelectTrigger className="h-8 w-[70px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {PAGE_SIZES.map(s => <SelectItem key={s} value={String(s)}>{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <span className="ml-2">
+              {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filtered.length)} of {filtered.length}
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => p - 1)}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+              let page: number;
+              if (totalPages <= 5) {
+                page = i + 1;
+              } else if (currentPage <= 3) {
+                page = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                page = totalPages - 4 + i;
+              } else {
+                page = currentPage - 2 + i;
+              }
+              return (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? "default" : "outline"}
+                  size="icon"
+                  className="h-8 w-8 text-xs"
+                  onClick={() => setCurrentPage(page)}
+                >
+                  {page}
+                </Button>
+              );
+            })}
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => p + 1)}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
@@ -224,7 +390,7 @@ export default function Students() {
               <Select value={form.class} onValueChange={(v) => updateForm("class", v)}>
                 <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
                 <SelectContent>
-                  {["Nursery", "KG-1", "KG-2", "Class 1", "Class 2", "Class 3"].map((c) => (
+                  {CLASSES.filter(c => c !== "All").map((c) => (
                     <SelectItem key={c} value={c}>{c}</SelectItem>
                   ))}
                 </SelectContent>
@@ -235,7 +401,7 @@ export default function Students() {
               <Select value={form.section} onValueChange={(v) => updateForm("section", v)}>
                 <SelectTrigger><SelectValue placeholder="Select section" /></SelectTrigger>
                 <SelectContent>
-                  {["A", "B", "C"].map((s) => (
+                  {SECTIONS.filter(s => s !== "All").map((s) => (
                     <SelectItem key={s} value={s}>{s}</SelectItem>
                   ))}
                 </SelectContent>
