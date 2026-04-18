@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search, Edit2, Trash2, User, Loader2, ChevronLeft, ChevronRight, Filter } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, User, Loader2, ChevronLeft, ChevronRight, Filter, Eye } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -281,7 +282,12 @@ export default function Students() {
                       <td className="py-3 px-3 text-foreground hidden xl:table-cell">{student.phone}</td>
                       <td className="py-3 px-3">
                         <div className="flex items-center justify-center gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => openEdit(student)}>
+                          <Link to={`/students/${student.id}`}>
+                            <Button variant="ghost" size="icon" title="View profile">
+                              <Eye className="w-4 h-4 text-primary" />
+                            </Button>
+                          </Link>
+                          <Button variant="ghost" size="icon" onClick={() => openEdit(student)} title="Edit">
                             <Edit2 className="w-4 h-4" />
                           </Button>
                           <Button variant="ghost" size="icon" onClick={() => handleDelete(student.id)}>

@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Students from "./pages/Students";
+import StudentProfile from "./pages/StudentProfile";
 import ComingSoon from "./pages/ComingSoon";
 import ClassSections from "./pages/ClassSections";
 import AdmissionForm from "./pages/AdmissionForm";
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/students/admission-form" element={<AdmissionForm />} />
             <Route path="/students/new-admission" element={<AdmissionForm />} />
             <Route path="/students" element={<Students />} />
+            <Route path="/students/:id" element={<StudentProfile />} />
             <Route path="/students/bulk-upload" element={<ComingSoon />} />
             <Route path="/students/promotion" element={<ComingSoon />} />
             <Route path="/students/release-transfer" element={<ComingSoon />} />
